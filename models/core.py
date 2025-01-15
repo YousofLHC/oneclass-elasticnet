@@ -1,4 +1,6 @@
-from sklearn.base import BaseEstimator, OutlierMixin
+from sklearn.base             import BaseEstimator, OutlierMixin
+from sklearn.utils.validation import check_X_y, check_array
+from sklearn.metrics.pairwise import pairwise_kernels
 import numpy as np
 
 
@@ -41,13 +43,15 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
     def __init__(self, landa1=0.5, target=1, lb=None, solver='cvxopt',
                  metric=None, only_target=True, thr=1.0):
-        self.landa1      = landa1
-        self.target      = target
-        self.lb          = lb
-        self.solver      = solver
-        self.metric      = metric
-        self.only_target = only_target
-        self.thr         = thr
+        self.landa1       = landa1
+        self.landa2       = 1 - self.landa1
+        self.target       = target
+        self.lb           = lb
+        self.solver       = solver
+        self.metric       = metric
+        self.only_target  = only_target
+        self.thr          = thr
+        self.return_label = False
 
     def _validate_params(self):
         """
@@ -86,3 +90,56 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # thr must be a positive float
         if not isinstance(self.thr, (int, float)) or self.thr <= 0:
             raise ValueError(f"thr ({self.thr}) must be a positive float.")
+        
+    def fit(self, X, y=None):
+        """
+        Fit the EnetConvexHull model to the given data.
+
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Training data.
+        y : ndarray of shape (n_samples, )
+            Class labels. If provided, only samples with `target` label will be used.
+
+        Returns
+        -------
+        self : object 
+            Fitted instance of the model.
+        """
+
+        # Validate parameters and inputs
+        self._validate_params()
+        X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
+
+        # Select target samples if applicable
+        if y is not None:
+            self.return_label = True
+            # sklearn ``metrics`` API needs attribute ``classes_``
+            self.classes_ = np.unique(y) # Required for scikit-learn compatibility
+            mask = (y == self.target)
+            self.X_target = X[mask, :] if self.only_target else X
+        else:
+            self.X_target = X
+
+        # Compute the kernel matrix
+        self.G = pairwise_kernels(self.X_target, metric=self.metric)
+        self.G_sum = np.sum(self.G)
+        self.n, self.m = self.X_target.shape
+
+        # Compute the optimization matrix
+        BTB = self.pairwise_kernels_similarity(self.X_target, metric=self.metric)
+        self.P = (self.landa2 * np.identity(self.n)) + BTB
+
+        # Inirialize lower bounds
+        if self.lb is None:
+            self.lb = np.zeros((self.n, 1))
+
+        # Store additional parameters for later use. # for scikit-learn compatibility
+        self.is_fitted_ = True
+
+        return self
+
+    def pairwise_kernels_similarity(self, X, metric):
+        NotImplemented
