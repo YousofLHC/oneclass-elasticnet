@@ -48,3 +48,41 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self.metric      = metric
         self.only_target = only_target
         self.thr         = thr
+
+    def _validate_params(self):
+        """
+        Validate the input parameters for the EnetConvexHull model.
+
+        Raises
+        ------
+        ValueError
+            If any parameter is invalid.
+        """
+
+        # landa1 must be in [0, 1]
+        if not isinstance(self.landa1, (int, float)) or not (0 <= self.landa1 <= 1):
+            raise ValueError(f"landa1 ({self.landa1}) must be a float in the range [0,1].")
+        
+        # target must be an integer
+        if not isinstance(self.target, int):
+            raise ValueError(f"target ({self.target}) must be an integer.")
+        
+        # lb must be None or a numpy array
+        if self.b is not None and not isinstance(self.lb, np.ndarray):
+            raise ValueError(f"lb must be a numpy array or None. Got {type(self.lb)} instead.")
+
+        # solver must be a string or callable
+        if not (self.solver is None or isinstance(self.solver, str) or callable(self.solver)):
+            raise ValueError(f"solver ({self.solver}) must be a string, callable or None.")
+
+        # metric must be a string or callable
+        if not (self.metric is None or isinstance(self.metric, str) or callable(self.metric)):
+            raise ValueError(f"metric ({self.metric}) must be a string, callable or None.")
+        
+        # only_target must be a boolean
+        if not isinstance(self.only_target, bool):
+            raise ValueError(f"only_target ({self.only_target}) must be a boolean.")
+        
+        # thr must be a positive float
+        if not isinstance(self.thr, (int, float)) or self.thr <= 0:
+            raise ValueError(f"thr ({self.thr}) must be a positive float.")
