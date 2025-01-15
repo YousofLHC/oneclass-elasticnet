@@ -111,3 +111,29 @@ def test_calculate_z():
         assert False, "Expected an error when `__calculate_z__` is called before fit, but none was raised."
     except ValueError as e:
         assert "not fitted" in str(e), "Error message for calling `__calcualte_z__` on unfitted model is incorrect."
+
+
+def test_predict():
+    """
+    Test the predict method of EnetConexHull.
+    """
+    model = EnetConexHull(metric='linear', thr=1.0)
+
+    X_train = np.array([[1,2], [3,4], [5, 6]])
+    model.fit(X_train)
+
+    X_test = np.array([[1,2], [7, 8], [10, 12]])
+
+    try:
+        predictions = model.predict(X_test)
+        assert predictions.shape == (X_test.shape[0], ), "The shape of predictions is incorrect."
+        assert np.all(np.isin(predictions, [1,-1])), "Predictions should only contain 1 and -1."
+    except Exception as e:
+        assert False, f"prdict raised an error: {e}"
+
+    unfitted_model = EnetConexHull(metric='linear')
+    try:
+        unfitted_model.predict(X_test)
+        assert False, "Expected and error when predict is called before `fit`, but none was raised."
+    except ValueError as e:
+        assert "not fitted" in str(e), "Error message for calling predict on unfitted model is incorrect."
