@@ -1,6 +1,8 @@
 from sklearn.base             import BaseEstimator, OutlierMixin
 from sklearn.utils.validation import check_X_y, check_array
 from sklearn.metrics.pairwise import pairwise_kernels
+from   qpsolvers              import solve_qp
+from   tqdm                   import tqdm
 import numpy as np
 
 
@@ -184,6 +186,48 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         #        g[i,j] = G[i,j] - (1/n)*( (np.sum(G[i,:])) + np.sum(G[:, j]) ) + (1/n**2)*G_kl
         
         return g # g is (n_sample_x, n_sample_y) matrix
+
+
+    def __calculate_z__(self, sample):
+        """
+        Calcualte the z-value for a give sample.
+
+        Parameters
+        ----------
+        sample : ndarray of shape (1, n_features)
+            Input sample
+
+        Returns
+        -------
+        z_value : float
+            Computed z-value for the sample
+        """
+        # Compute kernel similarity between X_target and the sample
+        Ky = self.pairwise_kernels_similarity(self.X_target, sample, metric=self.metric)
+        #h  = np.zeros( (self.n, 1) )
+        #for k in tqdm(range(self.n),desc='optimal', leave=False):
+        #    h[k,0] = Ky[k,0]-(1/self.n)*(np.sum(Ky)+np.sum(self.G[k,:]))+\
+        #    (1/self.n**2)*self.G_sum
+        #
+        #q = self.landa1*np.ones((self.n,1))+(-2*h)
+
+        # Compute h values
+        Kysum = np.sum(Ky)
+        Grow  = np.sum(self.G, axis=1)
+        const = self.G_sum/(self.n**2)
+        h=np.array([
+            [ Ky[k,0]-(( Kysum + Grow[k] )/self.n)+ const ] for k in tqdm(range(self.n),desc='optimal', leave=False)
+        ])
+        
+        # Prepare the optimization problem
+        q = self.landa1*np.ones((self.n,1))+(-2*h)
+
+        # Solve the quadratic programming problem
+        x = solve_qp(2*self.P, q, lb=self.lb, solver=self.solver)
+
+        # Compute the z-value
+        z_value = self.landa1*np.sum(x)+self.landa2*np.linalg.norm(x)
+        return z_value
 
 
     def predict(self, X):
