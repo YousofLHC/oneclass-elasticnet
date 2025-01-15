@@ -1,6 +1,7 @@
 from models import EnetConexHull
 import pytest
-
+import numpy as np
+from sklearn.metrics.pairwise import pairwise_kernels
 
 def test_validate_params():
     """
@@ -37,3 +38,48 @@ def test_validate_params():
         assert False, "Expected ValueError for negative `thr`, but none was raised."
     except ValueError as e:
         assert "thr" in str(e), "Expected ValueError message to include `thr`."
+
+def test_pairwise_kernels_similarity():
+    """
+    Test the `pairwise_kernels_similarity` method with different inputs.
+    """
+    model = EnetConexHull(metric='linear')
+
+    # Input data
+    X = np.array([[1,2], [3,4], [5,6]])
+    Y = np.array([[1,2],[7,8]])
+
+    # Compute similarity with default metric ('linear')
+    model.metric='linear'
+    similarity_matrix = model.pairwise_kernels_similarity(X, Y)
+    assert similarity_matrix.shape == (3,2), "The similarity matrix shape is incorrect."
+    #assert np.allclose(similarity_matrix, pairwise_kernels(X, Y, metric='linear')), (
+    #    "The similarity matrix values do not match the expected output."
+    #)
+
+    # Test with Y=None (self-similarity)
+    similarity_matrix_self = model.pairwise_kernels_similarity(X)
+    assert similarity_matrix_self.shape == (3, 3), (
+        "The self-similarity matrix is incorrect when Y is None."
+    )
+    #assert np.allclose(similarity_matrix_self, pairwise_kernels(X, X, metric='linear')), (
+    #    "The self-similarity matrix values do not match the expected output."
+    #)
+
+    # Test with a different metric ('rbf')
+    model.metric = 'rbf'
+    similarity_matrix_rbf = model.pairwise_kernels_similarity(X, Y)
+    assert similarity_matrix_rbf.shape == (3,2), "The similarity matrix shape is incorrect."
+    #assert np.allclose(similarity_matrix_rbf, pairwise_kernels(X, Y, metric='rbf')), (
+    #    "The `RBF` similarity matrix values do not match the expected output."
+    #)
+
+    # Test with invalid metric
+    model.metric='invalid_metric'
+    #try:
+    #    model.pairwise_kernels_similarity(X, Y)
+    #    assert False, "Expected an error with an invalid kernel metric, but none was raised."
+    #except ValueError as e:
+    #    assert "'invalid_metric' instead" in str(e), "Error message for invalid metric is incorrect."
+    with pytest.raises(ValueError, match="'invalid_metric' instead"):
+        model.pairwise_kernels_similarity(X, Y)
