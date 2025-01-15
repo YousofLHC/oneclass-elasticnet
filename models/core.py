@@ -141,9 +141,51 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
         return self
 
-    def pairwise_kernels_similarity(self, X, metric):
-        NotImplemented
-    
+    def pairwise_kernels_similarity(self, X, Y=None, metric=None ):
+        """
+        Compute the adjusted pairwise kernel similarity matrix.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_smaples_X, n_features)
+            Input data for the first set.
+        Y : ndarray of shape (n_samples_Y, n_features)
+            Input data for the second set. If None, Y is set to X.
+        metric : str, callable, optional (Defaults = the model's metric)
+            Kernel metric to use. 
+
+        Returns
+        -------
+        similarity_matrix : ndarray of shape (n_samples_X, n_sample_Y)
+            Adjusted pairwise kernel similarity matrix.
+        """
+
+        if metric is None:
+            metric = self.metric
+        if Y is None:
+            Y = X
+        
+        # Compute the pairwise kernel matrix
+        G = pairwise_kernels(X, Y, metric=metric)
+
+        # Compute adjustments for the kernel
+        n, m = X.shape[0], Y.shape[0]
+        G_kl = np.sum(G)
+        Grow  = np.sum(G, axis=1) # row-wise sum #G[i,:]  foreach i
+        Gcol  = np.sum(G, axis=0) # column-wise sum #G[:,j] foreach j
+        
+        # Broadcasting sums to match matrix dimensions
+        Grow  = np.broadcast_to(Grow, shape=(n, n)).T
+        Gcol = np.broadcast_to(Gcol,shape=(m,m))
+
+        g = G - ( (Grow+Gcol)/n ) + (1/n**2)*G_kl
+        #for i in tqdm(range(n),desc='BTB',leave=False):
+        #    for j in range(m):
+        #        g[i,j] = G[i,j] - (1/n)*( (np.sum(G[i,:])) + np.sum(G[:, j]) ) + (1/n**2)*G_kl
+        
+        return g # g is (n_sample_x, n_sample_y) matrix
+
+
     def predict(self, X):
         """
         Predict whether a sample is an inlier or outlier.
