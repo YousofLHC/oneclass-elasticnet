@@ -173,12 +173,12 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # Compute adjustments for the kernel
         n, m = X.shape[0], Y.shape[0]
         G_kl = np.sum(G)
-        Grow  = np.sum(G, axis=1) # row-wise sum #G[i,:]  foreach i
-        Gcol  = np.sum(G, axis=0) # column-wise sum #G[:,j] foreach j
+        Grow  = np.sum(G, axis=1, keepdims=True) # row-wise sum #G[i,:]  foreach i
+        Gcol  = np.sum(G, axis=0, keepdims=True) # column-wise sum #G[:,j] foreach j
         
         # Broadcasting sums to match matrix dimensions
-        Grow  = np.broadcast_to(Grow, shape=(n, n)).T
-        Gcol = np.broadcast_to(Gcol,shape=(m,m))
+        Grow  = np.broadcast_to(Grow, shape=(n, m))
+        Gcol = np.broadcast_to(Gcol,shape=(n,m))
 
         g = G - ( (Grow+Gcol)/n ) + (1/n**2)*G_kl
         #for i in tqdm(range(n),desc='BTB',leave=False):
