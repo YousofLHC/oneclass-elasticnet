@@ -172,7 +172,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             Y = X
         
         # Compute the pairwise kernel matrix
-        G = pairwise_kernels(X, Y, metric=metric)
+        G = pairwise_kernels(X, Y, metric=metric, **self.kernel_params)
 
         # Compute adjustments for the kernel
         n, m = X.shape[0], Y.shape[0]
