@@ -44,16 +44,17 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     """
 
     def __init__(self, landa1=0.5, target=1, lb=None, solver='cvxopt',
-                 metric=None, only_target=True, thr=1.0):
-        self.landa1       = landa1
-        self.landa2       = 1 - self.landa1
-        self.target       = target
-        self.lb           = lb
-        self.solver       = solver
-        self.metric       = metric
-        self.only_target  = only_target
-        self.thr          = thr
-        self.return_label = False
+                 metric=None, only_target=True, thr=1.0, kernel_params=None):
+        self.landa1        = landa1
+        self.landa2        = 1 - self.landa1
+        self.target        = target
+        self.lb            = lb
+        self.solver        = solver
+        self.metric        = metric
+        self.only_target   = only_target
+        self.thr           = thr
+        self.return_label  = False
+        self.kernel_params = kernel_params if kernel_params else {}
 
     def _validate_params(self):
         """
@@ -129,7 +130,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             self.X_target = X
 
         # Compute the kernel matrix
-        self.G = pairwise_kernels(self.X_target, metric=self.metric)
+        self.G = pairwise_kernels(self.X_target, metric=self.metric, **self.kernel_params)
         self.G_sum = np.sum(self.G)
         self.n, self.m = self.X_target.shape
 
@@ -286,6 +287,17 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         scores = np.array([self.__calculate_z__(sample.reshape(1, -1)) for sample in X])
         return scores
 
+    def set_kernel_params(self, **params):
+        """
+        Set additional parameter for kernel computations.
+
+        Parameters
+        ----------
+        **params : dict
+            Additional parameters for `pairwise_kernel`
+        """
+        self.kernel_params.update(params)
+
     def get_params(self, deep = True):
         """
         Get the parameters for this estimator.
@@ -303,13 +315,14 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         """
 
         return {
-            'landa1'      : self.landa1,
-            'target'      : self.target,
-            'lb'          : self.lb,
-            'solver'      : self.solver,
-            'metric'      : self.metric,
-            'only_target' : self.only_target,
-            'thr'         : self.thr
+            'landa1'        : self.landa1,
+            'target'        : self.target,
+            'lb'            : self.lb,
+            'solver'        : self.solver,
+            'metric'        : self.metric,
+            'only_target'   : self.only_target,
+            'thr'           : self.thr,
+            'kernel_params' : self.kernel_params,
         }
     
     def set_params(self, **params):
@@ -326,7 +339,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self : object
             Returns the instance itself.
         """
-
+        kernel_params = params.pop('kernel_params', {})
         for key, value in params.items():
             if hasattr(self, key):
                 setattr(self, key, value)
@@ -334,4 +347,5 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
                 raise ValueError(f"Invalid parameter `{key}` for estimator `{self.__class__.__name__}`."
                                  "Check the list of available parameters using `get_params().keys()`.")
         
+        self.kernel_params.update(kernel_params)
         return self
