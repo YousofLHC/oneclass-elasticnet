@@ -143,3 +143,36 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
     def pairwise_kernels_similarity(self, X, metric):
         NotImplemented
+    
+    def predict(self, X):
+        """
+        Predict whether a sample is an inlier or outlier.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Input data.
+        
+        Returns
+        -------
+        predictions : ndarray of shape (n_samples)
+            Prediction 1 for inliers, -1 for outliers.
+        """
+
+        # Check if the model is fitted.
+        if not hasattr(self, "is_fitted_"):
+            raise ValueError(f"This {self.__class__.__name__} is not fitted yet. Call `fit` before using this method.")
+        
+        # Validate input data
+        X = check_array(X, ensure_2d=True, dtype=np.float64)
+
+        # Compute decision scores
+        scores = np.array([self.__calculate_z__(sample.reshape(1,-1)) for sample in X])
+
+        # Classifiy based on threshold
+        predictions = np.where(scores <= self.thr, 1, -1)
+
+        return predictions
+
+    def __calculate_z__(self,X):
+        NotImplemented
