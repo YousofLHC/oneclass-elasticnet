@@ -278,5 +278,53 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # Compute decision scores
         scores = np.array([self.__calculate_z__(sample.reshape(1, -1)) for sample in X])
         return scores
-    def __calculate_z__(self,X):
-        NotImplemented
+
+    def get_params(self, deep = True):
+        """
+        Get the parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, optional(default=True)
+            If True, return the parameter for this estimator and
+            contained subobjects that are estimators.
+        
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+
+        return {
+            'landa1'      : self.landa1,
+            'target'      : self.target,
+            'lb'          : self.lb,
+            'solver'      : self.solver,
+            'metric'      : self.metric,
+            'only_target' : self.only_target,
+            'thr'         : self.thr
+        }
+    
+    def set_params(self, **params):
+        """
+        Set the parameters of this estimator.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+
+        for key, value in params.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                raise ValueError(f"Invalid parameter `{key}` for estimator `{self.__class__.__name__}`."
+                                 "Check the list of available parameters using `get_params().keys()`.")
+        
+        return self
