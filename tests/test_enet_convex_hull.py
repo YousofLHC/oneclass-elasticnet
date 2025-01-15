@@ -137,3 +137,33 @@ def test_predict():
         assert False, "Expected and error when predict is called before `fit`, but none was raised."
     except ValueError as e:
         assert "not fitted" in str(e), "Error message for calling predict on unfitted model is incorrect."
+
+
+def test_kernel_params():
+    """
+    Test kernel_params functionality in EnetConexHull class.
+    """
+    
+    # Initialize the model with specific kernel parameters
+    model = EnetConexHull(metric='rbf', kernel_params={'gamma': 0.1})
+
+    # Input data
+    X = np.array([[1,2], [3,4], [5,6]])
+
+    # Validate the initial kernel_params
+    assert model.kernel_params == {'gamma':0.1}, "Initial kernel_params are not set correctly."
+
+    # Update kernel_params
+    model.set_kernel_params(gamma=0.2)
+    assert model.kernel_params == {'gamma':0.2}, "Failed to update kernel_params."
+
+    # Validate the kernel computation with updated kernel_params
+    expected_result = pairwise_kernels(X, metric='rbf', gamma=0.2)
+    result = pairwise_kernels(X, metric=model.metric, **model.kernel_params)
+
+    assert np.allclose(result, expected_result), "Kernel computation with updated kernel_params is incorrect."
+
+
+
+
+
