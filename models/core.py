@@ -54,6 +54,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self.only_target  = only_target
         self.thr          = thr
         self.return_label = False
+        self._validate_params()
 
     def _validate_params(self):
         """
@@ -74,7 +75,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             raise ValueError(f"target ({self.target}) must be an integer.")
         
         # lb must be None or a numpy array
-        if self.b is not None and not isinstance(self.lb, np.ndarray):
+        if self.lb is not None and not isinstance(self.lb, np.ndarray):
             raise ValueError(f"lb must be a numpy array or None. Got {type(self.lb)} instead.")
 
         # solver must be a string or callable
