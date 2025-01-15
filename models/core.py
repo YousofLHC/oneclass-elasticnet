@@ -158,21 +158,39 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         predictions : ndarray of shape (n_samples)
             Prediction 1 for inliers, -1 for outliers.
         """
-
-        # Check if the model is fitted.
-        if not hasattr(self, "is_fitted_"):
-            raise ValueError(f"This {self.__class__.__name__} is not fitted yet. Call `fit` before using this method.")
-        
-        # Validate input data
-        X = check_array(X, ensure_2d=True, dtype=np.float64)
-
-        # Compute decision scores
-        scores = np.array([self.__calculate_z__(sample.reshape(1,-1)) for sample in X])
+        # Use `decision_function` to compute scores.
+        scores = self.decision_function(X)
 
         # Classifiy based on threshold
         predictions = np.where(scores <= self.thr, 1, -1)
 
         return predictions
 
+    def decision_function(self, X):
+        """
+        Compute anomaly scores for each sample
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_sample, n_features)
+            Input data.
+
+        Returns
+        -------
+        scores : ndarray of shape (n_samples, n_features)
+            Anomaly scores for each sample. Lower scores indicate closer proximity
+            to the target class
+        """
+
+        # Check if the model is fitted
+        if not hasattr(self, "is_fitted_"):
+            raise ValueError(f"This {self.__class__.__name__} instance is not fitted yet. Call `fit` before using this method.")
+        
+        # Validate input data
+        X = check_array(X, ensure_2d=True, dtype=np.float64)
+
+        # Compute decision scores
+        scores = np.array([self.__calculate_z__(sample.reshape(1, -1)) for sample in X])
+        return scores
     def __calculate_z__(self,X):
         NotImplemented
