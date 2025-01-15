@@ -83,3 +83,31 @@ def test_pairwise_kernels_similarity():
     #    assert "'invalid_metric' instead" in str(e), "Error message for invalid metric is incorrect."
     with pytest.raises(ValueError, match="'invalid_metric' instead"):
         model.pairwise_kernels_similarity(X, Y)
+
+def test_calculate_z():
+    """
+    Test the __calculate_z__ method
+    """
+    model = EnetConexHull(metric='linear')
+
+    # Sample training data
+    X_train = np.array([[1,2], [3,4], [5,6]])
+    model.fit(X_train)
+
+    # Sample input for calculation
+    sample = np.array([[2,3]])
+
+    # Call __calculate_z__
+    try:
+        z_value = model.__calculate_z__(sample)
+        assert isinstance(z_value, float), "The z-value should be a float."
+    except Exception as e:
+        assert False, f"__calculate_z__ raised an error: {e}"
+
+    # Test without fitting the model
+    unfitted_model = EnetConexHull(metric='linear')
+    try:
+        unfitted_model.__calculate_z__(sample)
+        assert False, "Expected an error when `__calculate_z__` is called before fit, but none was raised."
+    except ValueError as e:
+        assert "not fitted" in str(e), "Error message for calling `__calcualte_z__` on unfitted model is incorrect."

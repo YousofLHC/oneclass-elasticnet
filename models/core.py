@@ -113,16 +113,19 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
         # Validate parameters and inputs
         self._validate_params()
-        X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
+        #if y is not None:
+        #    X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
 
         # Select target samples if applicable
         if y is not None:
+            X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
             self.return_label = True
             # sklearn ``metrics`` API needs attribute ``classes_``
             self.classes_ = np.unique(y) # Required for scikit-learn compatibility
             mask = (y == self.target)
             self.X_target = X[mask, :] if self.only_target else X
         else:
+            X = check_array(X, ensure_2d=True, dtype=np.float64)
             self.X_target = X
 
         # Compute the kernel matrix
@@ -202,6 +205,10 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         z_value : float
             Computed z-value for the sample
         """
+        # Check if the model is fitted
+        if not hasattr(self, "is_fitted_"):
+            raise ValueError(f"This {self.__class__.__name__} instance is not fitted yet. Call `fit` before using this method.")
+        
         # Compute kernel similarity between X_target and the sample
         Ky = self.pairwise_kernels_similarity(self.X_target, sample, metric=self.metric)
         #h  = np.zeros( (self.n, 1) )
