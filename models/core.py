@@ -6,6 +6,17 @@ from   tqdm                   import tqdm
 import numpy as np
 
 
+def ensure_fitted(func):
+    """
+    Decorator to ensure the model is fitted before method execution.
+    """
+    def wrapper(self, *args, **kwargs):
+        if not hasattr(self, "is_fitted_"):
+            raise ValueError(f"This {self.__class__.__name__} instance is not fitted yet. Call `fit` before using this method.")
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
 class EnetConexHull(BaseEstimator, OutlierMixin):
     """
     One-Class Classifier for Anomaly Detection using Elastic Net and Convex Hull.
@@ -191,7 +202,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         
         return g # g is (n_sample_x, n_sample_y) matrix
 
-
+    @ensure_fitted
     def __calculate_z__(self, sample):
         """
         Calcualte the z-value for a give sample.
@@ -206,10 +217,6 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         z_value : float
             Computed z-value for the sample
         """
-        # Check if the model is fitted
-        if not hasattr(self, "is_fitted_"):
-            raise ValueError(f"This {self.__class__.__name__} instance is not fitted yet. Call `fit` before using this method.")
-        
         # Compute kernel similarity between X_target and the sample
         Ky = self.pairwise_kernels_similarity(self.X_target, sample, metric=self.metric)
         #h  = np.zeros( (self.n, 1) )
@@ -237,7 +244,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         z_value = self.landa1*np.sum(x)+self.landa2*np.linalg.norm(x)
         return z_value
 
-
+    @ensure_fitted
     def predict(self, X):
         """
         Predict whether a sample is an inlier or outlier.
@@ -259,7 +266,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         predictions = np.where(scores <= self.thr, 1, -1)
 
         return predictions
-
+    @ensure_fitted
     def decision_function(self, X):
         """
         Compute anomaly scores for each sample
@@ -275,11 +282,6 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             Anomaly scores for each sample. Lower scores indicate closer proximity
             to the target class
         """
-
-        # Check if the model is fitted
-        if not hasattr(self, "is_fitted_"):
-            raise ValueError(f"This {self.__class__.__name__} instance is not fitted yet. Call `fit` before using this method.")
-        
         # Validate input data
         X = check_array(X, ensure_2d=True, dtype=np.float64)
 
