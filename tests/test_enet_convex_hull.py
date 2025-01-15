@@ -2,23 +2,38 @@ from models import EnetConexHull
 import pytest
 
 
-def test_initialization():
+def test_validate_params():
     """
-    Test initialization and parameter validation.
+    Test the `_validate_params` method with valid and invalid parameters.
     """
 
-    # Valid initialization
-    model = EnetConexHull(landa1=0.5, target=1, thr=1.0)
-    assert model.landa1 == 0.5, "`landa1` should be initialized to `0.5`"
-    assert model.target == 1  , "`target` should be initialized to `1`"
-    assert model.thr    == 1.0, "`thr`    should be initialized to `1.0`"   
+    # Valid parameters
+    model = EnetConexHull(landa1=0.5, target=1, thr=0.1)
+    try:
+        model._validate_params()
+    except ValueError as e:
+        assert False, f"`_validate_params` raised an exception with valid parameters: {e}"
+    
+    # Invalid landa1 (out of range)
+    model = EnetConexHull(landa1=1.5, target=1, thr=1.0)
+    try:
+        model._validate_params()
+        assert False, "Expected ValueError for `landa1` out of range, but none was raised."
+    except ValueError as e:
+        assert "landa1" in str(e), "Expected ValueError message to include `landa1`."
 
-    # Invalid initialization: landa1 out of range
-    with pytest.raises(ValueError) as excinfo:
-        EnetConexHull(landa1=-0.1)
-    assert "landa1" in str(excinfo.value), "Exception should indicate invalid `landa1` value."
+    # Invalid target (non-integer)
+    model = EnetConexHull(landa1=0.5, target='invalid', thr=1.0)
+    try:
+        model._validate_params()
+        assert False, "Expected ValueError for non-integer `target`, but none was raised."
+    except ValueError as e:
+        assert "target" in str(e), "Expected ValueError message to include `target`"
 
-    # Invalid initialization: negative thr
-    with pytest.raises(ValueError) as excinfo:
-        EnetConexHull(thr=-1.0)
-    assert "thr" in str(excinfo.value), "Exception should indicate invalid `thr` value."
+    # Invalid thr (negative value)
+    model = EnetConexHull(landa1=0.5, target=1, thr=-0.5)
+    try:
+        model._validate_params()
+        assert False, "Expected ValueError for negative `thr`, but none was raised."
+    except ValueError as e:
+        assert "thr" in str(e), "Expected ValueError message to include `thr`."

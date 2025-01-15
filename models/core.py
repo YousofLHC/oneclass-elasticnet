@@ -54,7 +54,6 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self.only_target  = only_target
         self.thr          = thr
         self.return_label = False
-        self._validate_params()
 
     def _validate_params(self):
         """
