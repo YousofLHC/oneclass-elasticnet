@@ -1,4 +1,4 @@
-from models import EnetConvexHull
+from ocelastic import EnetConvexHull
 import pytest
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_kernels, linear_kernel
