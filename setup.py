@@ -11,7 +11,7 @@ setup(
     url="https://github.com/YousofLHC/flexi_datareader",  # URL of your project
     packages=find_packages(),  # Automatically find all packages
     install_requires=[
-        "scikit-learn>=1.6.1",  # وابستگی‌های موردنیاز
+        "scikit-learn>=1.6.1", 
         "numpy>=1.26.4",
         "qpsolvers>=4.3.",
         "tqdm>=4.66.2",
