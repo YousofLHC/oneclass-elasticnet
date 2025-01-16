@@ -453,6 +453,9 @@ class ThresholdFinder:
         self.X         = X
         self.XCopy     = deepcopy(X)
         self.n, self.m = X.shape
+        #self.model.lb shape is (n,1) but in this class we eliminate one sample so its shape must be
+        #   (n-1, 1) 
+        self.lb        = np.zeros((self.n-1,1)) if self.model.lb is None else self.model.lb[:-1, :]
 
     def find(self, outs='max'):
         z = np.zeros((self.n, 1))
@@ -465,7 +468,7 @@ class ThresholdFinder:
                                             metric=self.model.metric, **self.model.kernel_params)
             q            = self.model._calculate_q(G, Ky)
             
-            x_opt        = solve_qp(2*P, q, lb=self.model.lb, solver=self.model.solver)
+            x_opt        = solve_qp(2*P, q, lb=self.lb, solver=self.model.solver)
             z[row, 0] = self.model.landa1 * np.sum(x_opt) + self.model.landa2 * np.linalg.norm(x_opt)
         if isinstance(outs,str):
             return z, getattr(np,outs)(z)
