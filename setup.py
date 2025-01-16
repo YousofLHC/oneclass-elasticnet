@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="EnetConvexHullPackage",
+    name="ElasticHull",
     version="0.1",
     description="A package for anomaly detection using Elastic Net and Convex Hull.",
     packages=find_packages(),  # پیدا کردن تمام پکیج‌های موجود
