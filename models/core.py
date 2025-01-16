@@ -28,7 +28,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     target : int (default=1)
         The label of the target class (e.g., 1 for inliers)
     lb : ndarray of shape (n_samples, ) or None 
-        Lower bound for optimization variables. Defaults to zeros
+        Lower bound for QP optimization variables. Defaults to zeros
     solver : str, callable (default='cvxopt')
         The solver used for quadratic programming optimization.
     metric : str, callable
@@ -36,7 +36,15 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     only_target : bool (default=True)
         Whether to use only the target class samples for training.
     thr : float (default=1.0)
-        The decision threshold for classifying anomalies.   
+        The decision threshold for classifying anomalies.  
+    kernel_params : dict (default=None)
+        Additional parameters for kernel computation
+    degree : int (default=3)
+        Degree for poly kernels.
+    gamma : {'scale', 'auto'}, float (default='scale')
+        Kernel coefficient for 'rbf', 'poly' and 'sigmoid'
+    coef0 : float(default=1.0)
+        Independent term for 'poly' and 'sigmoid' kernels. 
         
 
     Notes
@@ -55,7 +63,8 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     """
 
     def __init__(self, landa1=0.5, target=1, lb=None, solver='cvxopt',
-                 metric=None, only_target=True, thr=1.0, kernel_params=None):
+                 metric=None, only_target=True, thr=1.0, kernel_params=None,
+                 degree=3, gamma='scale', coef0=1.0):
         self.landa1        = landa1
         self.landa2        = 1 - self.landa1
         self.target        = target
@@ -65,7 +74,20 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self.only_target   = only_target
         self.thr           = thr
         self.return_label  = False
+
+        # Initialize kernel parameters
         self.kernel_params = kernel_params if kernel_params else {}
+
+        # Define kernel-specific parameters based on the metric
+        if self.metric in {'poly', 'rbf', 'sigmoid'} and 'gamma' not in self.kernel_params:
+            self.kernel_params['gamma'] = gamma
+        if self.metric == 'poly':
+            if 'degree' not in self.kernel_params:
+                self.kernel_params['degree'] = degree
+            if 'coef0' not in self.kernel_params:
+             self.kernel_params['coef0']  = coef0
+        if 'coef0' not in self.kernel_params and self.metric == 'sigmoid':
+            self.kernel_params['coef0'] = coef0
 
     def _validate_params(self):
         """
@@ -100,7 +122,44 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # thr must be a positive float
         if not isinstance(self.thr, (int, float)) or self.thr <= 0:
             raise ValueError(f"thr ({self.thr}) must be a positive float.")
-        
+
+    def _validate_kernel_params(self):
+        """
+        Validate kernel-specific parameters based on the selected kernel metric.
+
+        Raises
+        ------
+        ValueError
+            If any kernel parameter is invalid or missing for the selected metric.
+        """
+        # Check if metric is specified
+        if self.metric is None:
+            raise ValueError("The kernel metric must be specified.")
+
+        # Validate gamma
+        if self.metric in {'poly', 'rbf', 'sigmoid'}:
+            gamma = self.kernel_params.get('gamma', 'scale')
+            if not (isinstance(gamma, (int, float)) or gamma in {'scale', 'auto'}):
+                raise ValueError(f"Invalid gamma value: {gamma}. It must be 'scale', 'auto', or a positive number.")
+
+        # Validate degree for poly kernel
+        if self.metric == 'poly':
+            degree = self.kernel_params.get('degree', None)
+            if degree is None:
+                raise ValueError("Invalid degree. The 'degree' parameter is required for the 'poly' kernel.")
+            if not isinstance(degree, int) or degree <= 0:
+                raise ValueError(f"Invalid degree value: {degree}. It must be a positive integer.")
+
+
+        # Validate coef0 for poly and sigmoid kernels
+        if self.metric in {'poly', 'sigmoid'}:
+            coef0 = self.kernel_params.get('coef0', None)
+            if coef0 is not None and not isinstance(coef0, (int, float)):
+                raise ValueError(f"Invalid coef0 value: {coef0}. It must be a number.")
+
+        # Additional kernel-specific validations can be added here as needed
+
+
     def _adjust_kernel(self, X, Y=None):
         """
         Compute the adjusted pairwise kernel similarity matrix.
@@ -145,6 +204,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
         # Validate parameters and inputs
         self._validate_params()
+        self._validate_kernel_params()  # Validate kernel parameters
         if y is not None:
             X, y     = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
             self.return_label = True
@@ -325,6 +385,10 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             'only_target'   : self.only_target,
             'thr'           : self.thr,
             'kernel_params' : self.kernel_params,
+            # Explicitly include kernel-specific parameters
+            'degree'        : self.kernel_params.get('degree', None),
+            'gamma'         : self.kernel_params.get('gamma', None),
+            'coef0'         : self.kernel_params.get('coef0', None),
         }
     
     def set_params(self, **params):
@@ -341,13 +405,18 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         self : object
             Returns the instance itself.
         """
+
         kernel_params = params.pop('kernel_params', {})
+        for key in ['degree', 'gamma', 'coef0']:
+            if key in params:
+                kernel_params[key] = params.pop(key)
+        
         for key, value in params.items():
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
                 raise ValueError(f"Invalid parameter `{key}` for estimator `{self.__class__.__name__}`."
-                                 "Check the list of available parameters using `get_params().keys()`.")
+                                 "Check `get_params().keys()` for a list of valid parameters.")
         
         self.kernel_params.update(kernel_params)
         return self
