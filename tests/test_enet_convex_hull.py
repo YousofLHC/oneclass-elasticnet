@@ -186,5 +186,52 @@ def test_adjust_kernel():
     assert isinstance(adjusted_kernel, np.ndarray), "Adjusted kernel matrix must be a numpy array."
 
 
+import pytest
+
+def test_validate_kernel_params():
+    """
+    Test the _validate_kernel_params method of EnetConexHull.
+    """
+
+    # Case 1: Valid parameters for 'rbf' kernel
+    model_rbf = EnetConexHull(metric='rbf', kernel_params={'gamma': 0.5})
+    try:
+        model_rbf._validate_kernel_params()
+    except ValueError:
+        pytest.fail("Validation failed for valid 'rbf' kernel parameters.")
+
+    # Case 2: Valid parameters for 'poly' kernel
+    model_poly = EnetConexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': 3, 'coef0': 1.0})
+    try:
+        model_poly._validate_kernel_params()
+    except ValueError:
+        pytest.fail("Validation failed for valid 'poly' kernel parameters.")
+
+    # Case 3: Valid parameters for 'sigmoid' kernel
+    model_sigmoid = EnetConexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 1.5})
+    try:
+        model_sigmoid._validate_kernel_params()
+    except ValueError:
+        pytest.fail("Validation failed for valid 'sigmoid' kernel parameters.")
+
+    # Case 4: Invalid gamma for 'rbf'
+    model_invalid_gamma = EnetConexHull(metric='rbf', kernel_params={'gamma': 'invalid'})
+    with pytest.raises(ValueError, match="Invalid gamma value: invalid.*"):
+        model_invalid_gamma._validate_kernel_params()
+
+    # Case 5: Negative degree for 'poly'
+    model_negative_degree = EnetConexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': -1, 'coef0': 1.0})
+    with pytest.raises(ValueError, match="Invalid degree value: -1.*"):
+        model_negative_degree._validate_kernel_params()
+
+    # Case 6: Invalid coef0 for 'sigmoid'
+    model_invalid_coef0 = EnetConexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 'invalid'})
+    with pytest.raises(ValueError, match="Invalid coef0 value: invalid.*"):
+        model_invalid_coef0._validate_kernel_params()
+
+    # Case 7: Missing metric
+    model_no_metric = EnetConexHull(kernel_params={'gamma': 0.3})
+    with pytest.raises(ValueError, match="The kernel metric must be specified."):
+        model_no_metric._validate_kernel_params()
 
 
