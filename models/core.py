@@ -77,11 +77,9 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             If any parameter is invalid.
         """
 
-        # landa1 must be in [0, 1]
         if not isinstance(self.landa1, (int, float)) or not (0 <= self.landa1 <= 1):
             raise ValueError(f"landa1 ({self.landa1}) must be a float in the range [0,1].")
         
-        # target must be an integer
         if not isinstance(self.target, int):
             raise ValueError(f"target ({self.target}) must be an integer.")
         
@@ -89,15 +87,13 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         if self.lb is not None and not isinstance(self.lb, np.ndarray):
             raise ValueError(f"lb must be a numpy array or None. Got {type(self.lb)} instead.")
 
-        # solver must be a string or callable
-        if not (self.solver is None or isinstance(self.solver, str) or callable(self.solver)):
+        if not (self.solver is None or isinstance(self.solver, (str, callable))):
             raise ValueError(f"solver ({self.solver}) must be a string, callable or None.")
 
         # metric must be a string or callable
-        if not (self.metric is None or isinstance(self.metric, str) or callable(self.metric)):
+        if not (self.metric is None or isinstance(self.metric, (str, callable))):
             raise ValueError(f"metric ({self.metric}) must be a string, callable or None.")
         
-        # only_target must be a boolean
         if not isinstance(self.only_target, bool):
             raise ValueError(f"only_target ({self.only_target}) must be a boolean.")
         
@@ -105,6 +101,30 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         if not isinstance(self.thr, (int, float)) or self.thr <= 0:
             raise ValueError(f"thr ({self.thr}) must be a positive float.")
         
+    def _adjust_kernel(self, X, Y=None):
+        """
+        Compute the adjusted pairwise kernel similarity matrix.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples_X, n_features)
+            Inpud data for the first set.
+        Y : ndarray of shape (n_samples_Y, n_features)
+            Input data for the second set. If None, Y is set to X.
+
+        Returns
+        -------
+        adjusted_kernel : ndarray of shape (n_samples_X, n_samples_Y)
+            Adjusted pairwise kernel similarity matrix.
+        """
+        if Y is None:
+            Y = X
+        G = pairwise_kernels(X, Y, metric=self.metric, **self.kernel_params)
+        G_sum = G.sum()
+        row_sum = G.sum(axis=1, keepdims=True)
+        col_sum = G.sum(axis=0, keepdims=True)
+        return G -(row_sum+col_sum)/X.shape[0] + G_sum / (X.shape[0]**2)
+
     def fit(self, X, y=None):
         """
         Fit the EnetConvexHull model to the given data.
@@ -125,12 +145,8 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
         # Validate parameters and inputs
         self._validate_params()
-        #if y is not None:
-        #    X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
-
-        # Select target samples if applicable
         if y is not None:
-            X, y = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
+            X, y     = check_X_y(X, y, accept_sparse=False, ensure_2d=True, dtype=np.float64)
             self.return_label = True
             # sklearn ``metrics`` API needs attribute ``classes_``
             self.classes_ = np.unique(y) # Required for scikit-learn compatibility
@@ -142,17 +158,13 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
 
         # Compute the kernel matrix
         self.G = pairwise_kernels(self.X_target, metric=self.metric, **self.kernel_params)
-        self.G_sum = np.sum(self.G)
         self.n, self.m = self.X_target.shape
 
         # Compute the optimization matrix
-        BTB = self.pairwise_kernels_similarity(self.X_target, metric=self.metric)
+        BTB = self._adjust_kernel(self.X_target)
         self.P = (self.landa2 * np.identity(self.n)) + BTB
-
         # Inirialize lower bounds
-        if self.lb is None:
-            self.lb = np.zeros((self.n, 1))
-
+        self.lb = np.zeros((self.n, 1)) if self.lb is None else self.lb
         # Store additional parameters for later use. # for scikit-learn compatibility
         self.is_fitted_ = True
 
@@ -218,30 +230,18 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
             Computed z-value for the sample
         """
         # Compute kernel similarity between X_target and the sample
-        Ky = self.pairwise_kernels_similarity(self.X_target, sample, metric=self.metric)
-        #h  = np.zeros( (self.n, 1) )
-        #for k in tqdm(range(self.n),desc='optimal', leave=False):
-        #    h[k,0] = Ky[k,0]-(1/self.n)*(np.sum(Ky)+np.sum(self.G[k,:]))+\
-        #    (1/self.n**2)*self.G_sum
-        #
-        #q = self.landa1*np.ones((self.n,1))+(-2*h)
-
-        # Compute h values
-        Kysum = np.sum(Ky)
-        Grow  = np.sum(self.G, axis=1)
-        const = self.G_sum/(self.n**2)
-        h=np.array([
-            [ Ky[k,0]-(( Kysum + Grow[k] )/self.n)+ const ] for k in tqdm(range(self.n),desc='optimal', leave=False)
-        ])
+        Ky = self._adjust_kernel(self.X_target, sample)
+        h  = Ky - (Ky.sum() + self.G.sum(axis=1, keepdims=True))/self.X_target.shape[0]
+        h += self.G.sum()/(self.X_target.shape[0]**2)   
         
         # Prepare the optimization problem
-        q = self.landa1*np.ones((self.n,1))+(-2*h)
+        q = self.landa1*np.ones((self.n,1))+(-2*h)#??n or self.G.shape[0]?
 
         # Solve the quadratic programming problem
         x = solve_qp(2*self.P, q, lb=self.lb, solver=self.solver)
 
         # Compute the z-value
-        z_value = self.landa1*np.sum(x)+self.landa2*np.linalg.norm(x)
+        z_value = self.landa1*x.sum() + self.landa2*np.linalg.norm(x)
         return z_value
 
     @ensure_fitted
