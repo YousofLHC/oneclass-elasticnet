@@ -6,6 +6,59 @@ from   copy                   import deepcopy
 from   tqdm                   import tqdm
 import numpy as np
 
+from   matplotlib        import pyplot as plt
+from   matplotlib.figure import Figure
+from   tqdm              import tqdm
+import numpy             as     np
+import os
+
+
+
+#class Contour(Figure):
+#    def __init__(self, elastickocc, *args, **kwargs):
+#        self.ek     = elastickocc
+#        self.args   = args
+#        self.kwargs = kwargs 
+#
+#
+#
+#    def cplot(self, X, n=50, *args, **kwargs):
+#        self.fig = plt
+#        fn = os.path.join(os.path.dirname(__file__), 'Contour.mplstyle')
+#        self.fig.style.use([fn])
+#
+#        self.fig.plot(X[:,0], X[:,1],*args, **kwargs)
+#        self.x_mesh, self.y_mesh = self.mesh(X[:,0], X[:,1], n)
+#        self.z_mesh = np.zeros(self.x_mesh.shape)
+#        for i in tqdm(range(self.x_mesh.shape[0])):
+#            for j in tqdm(range(self.x_mesh.shape[1]), leave=False):
+#                
+#                y = np.array( [self.x_mesh[i,j], self.y_mesh[i,j]] ).reshape((1, self.ek.m))
+#                self.z_mesh[i,j]=self.ek.__calculate_z__(y)
+#
+#        C = self.fig.contour(self.x_mesh, self.y_mesh, self.z_mesh, *self.args, **self.kwargs)
+#        
+#        self.fig.clabel(C, inline=1, fontsize=self.kwargs.get('fontsize', 0.4),
+#                fmt=self.kwargs.get('fmt', '%2.2f'))
+#
+#        self.fig.xlabel('x axis', fontsize=15)
+#        self.fig.ylabel('y axis', fontsize=15)
+#        #plt.show()
+#
+#    
+#    def mesh(self, x, y, n=50):
+#        x_min, x_max = self.__minmax__(x)
+#        y_min, y_max = self.__minmax__(y)
+#        lengx        = (x_max - x_min)*0.05
+#        lengy        = (y_max - y_min)*0.05
+#        x            = np.linspace(x_min-lengx, x_max+lengx, n)
+#        y            = np.linspace(y_min-lengy, y_max+lengy, n)
+#        return np.meshgrid(x, y)
+#
+#    def __minmax__(self, X):
+#        return np.min(X), np.max(X)
+#    
+
 
 def ensure_fitted(func):
     """
@@ -306,6 +359,21 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # Compute the z-value
         z_value = self.landa1*x.sum() + self.landa2*np.linalg.norm(x)
         return z_value
+    
+    #def contour(self,n=21):
+    #    X = self.X_target
+    #    x_mesh, y_mesh = Contour(None).mesh(X[:,0], X[:,1], n)
+#
+    #    i_n, j_n = x_mesh.shape
+    #    z_mesh   = np.zeros(x_mesh.shape)
+#
+    #    for i in tqdm(range(i_n), desc='Contour plot',leave=False):
+    #        for j in tqdm(range(j_n), leave=False):
+    #            y = np.array([x_mesh[i,j], y_mesh[i,j]]).reshape((1, self.m))
+    #            z_mesh[i,j] = self.__calculate_z__(y)
+#
+    #    return x_mesh, y_mesh, z_mesh, n
+    
     def _calculate_q(self, G: np.ndarray, Ky: np.ndarray) -> np.ndarray:
         """
         ONLY FOR THRESHOLDFINDER. NEED REFACTOR FOR ENETCONVEXHULL CLASS
