@@ -14,12 +14,7 @@ Install the package using pip:
 ```bash
 pip install oneclass-elasticnet
 ```
-
-
 ---
-
-#### 5. **استفاده سریع**
-```markdown
 ## Quick Start
 ```python
 from ocelastic import EnetConvexHull, ThresholdFinder
@@ -39,11 +34,7 @@ z_values, max_z = finder.find()
 # Make predictions
 predictions = model.predict(X)
 ```
-
 ---
-
-#### 6. **توضیحات پارامترها**
-```markdown
 ## Parameters
 - **landa1**: The weight for L1 regularization (default: 0.5).
 - **metric**: Kernel function for pairwise similarity (`rbf`, `linear`, `poly`, `sigmoid`).
