@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "scikit-learn>=1.6.1", 
         "numpy>=1.26.4",
-        "qpsolvers>=4.3.",
+        "qpsolvers>=4.3.1",
         "tqdm>=4.66.2",
     ],
     classifiers=[
