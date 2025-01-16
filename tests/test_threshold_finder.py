@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_kernels
 from qpsolvers import cvxopt_solve_qp
-from models import EnetConexHull
+from models import EnetConvexHull
 from models import ThresholdFinder
 
 def test_threshold_finder():
@@ -12,8 +12,8 @@ def test_threshold_finder():
     X = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
     y = np.array([1, 1, 1, 1])  # All target samples
     
-    # Initialize the EnetConexHull model
-    model = EnetConexHull(landa1=0.5, metric='linear', solver='cvxopt')
+    # Initialize the EnetConvexHull model
+    model = EnetConvexHull(landa1=0.5, metric='linear', solver='cvxopt')
     model.fit(X, y)
 
     # Initialize ThresholdFinder with the model

@@ -1,4 +1,4 @@
-from models import EnetConexHull
+from models import EnetConvexHull
 import pytest
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_kernels, linear_kernel
@@ -10,14 +10,14 @@ def test_validate_params():
     """
 
     # Valid parameters
-    model = EnetConexHull(landa1=0.5, target=1, thr=0.1)
+    model = EnetConvexHull(landa1=0.5, target=1, thr=0.1)
     try:
         model._validate_params()
     except ValueError as e:
         assert False, f"`_validate_params` raised an exception with valid parameters: {e}"
     
     # Invalid landa1 (out of range)
-    model = EnetConexHull(landa1=1.5, target=1, thr=1.0)
+    model = EnetConvexHull(landa1=1.5, target=1, thr=1.0)
     try:
         model._validate_params()
         assert False, "Expected ValueError for `landa1` out of range, but none was raised."
@@ -25,7 +25,7 @@ def test_validate_params():
         assert "landa1" in str(e), "Expected ValueError message to include `landa1`."
 
     # Invalid target (non-integer)
-    model = EnetConexHull(landa1=0.5, target='invalid', thr=1.0)
+    model = EnetConvexHull(landa1=0.5, target='invalid', thr=1.0)
     try:
         model._validate_params()
         assert False, "Expected ValueError for non-integer `target`, but none was raised."
@@ -33,7 +33,7 @@ def test_validate_params():
         assert "target" in str(e), "Expected ValueError message to include `target`"
 
     # Invalid thr (negative value)
-    model = EnetConexHull(landa1=0.5, target=1, thr=-0.5)
+    model = EnetConvexHull(landa1=0.5, target=1, thr=-0.5)
     try:
         model._validate_params()
         assert False, "Expected ValueError for negative `thr`, but none was raised."
@@ -44,7 +44,7 @@ def test_pairwise_kernels_similarity():
     """
     Test the `pairwise_kernels_similarity` method with different inputs.
     """
-    model = EnetConexHull(metric='linear')
+    model = EnetConvexHull(metric='linear')
 
     # Input data
     X = np.array([[1,2], [3,4], [5,6]])
@@ -89,7 +89,7 @@ def test_calculate_z():
     """
     Test the __calculate_z__ method
     """
-    model = EnetConexHull(metric='linear')
+    model = EnetConvexHull(metric='linear')
 
     # Sample training data
     X_train = np.array([[1,2], [3,4], [5,6]])
@@ -106,7 +106,7 @@ def test_calculate_z():
         assert False, f"__calculate_z__ raised an error: {e}"
 
     # Test without fitting the model
-    unfitted_model = EnetConexHull(metric='linear')
+    unfitted_model = EnetConvexHull(metric='linear')
     try:
         unfitted_model.__calculate_z__(sample)
         assert False, "Expected an error when `__calculate_z__` is called before fit, but none was raised."
@@ -116,9 +116,9 @@ def test_calculate_z():
 
 def test_predict():
     """
-    Test the predict method of EnetConexHull.
+    Test the predict method of EnetConvexHull.
     """
-    model = EnetConexHull(metric='linear', thr=1.0)
+    model = EnetConvexHull(metric='linear', thr=1.0)
 
     X_train = np.array([[1,2], [3,4], [5, 6]])
     model.fit(X_train)
@@ -132,7 +132,7 @@ def test_predict():
     except Exception as e:
         assert False, f"prdict raised an error: {e}"
 
-    unfitted_model = EnetConexHull(metric='linear')
+    unfitted_model = EnetConvexHull(metric='linear')
     try:
         unfitted_model.predict(X_test)
         assert False, "Expected and error when predict is called before `fit`, but none was raised."
@@ -142,11 +142,11 @@ def test_predict():
 
 def test_kernel_params():
     """
-    Test kernel_params functionality in EnetConexHull class.
+    Test kernel_params functionality in EnetConvexHull class.
     """
     
     # Initialize the model with specific kernel parameters
-    model = EnetConexHull(metric='rbf', kernel_params={'gamma': 0.1})
+    model = EnetConvexHull(metric='rbf', kernel_params={'gamma': 0.1})
 
     # Input data
     X = np.array([[1,2], [3,4], [5,6]])
@@ -167,14 +167,14 @@ def test_kernel_params():
 
 def test_adjust_kernel():
     """
-    Test the `_adjust_kernel` method of  EnetConexHull for correctness.
+    Test the `_adjust_kernel` method of  EnetConvexHull for correctness.
     """
     # Generate mock data
     rng = check_random_state(42)
     X   = rng.rand(5, 3) # 5 samples, 3 features
 
     # Initialize the model
-    model = EnetConexHull(metric='linear', kernel_params={})
+    model = EnetConvexHull(metric='linear', kernel_params={})
 
     # Compute the adjusted kernel matrix
     adjusted_kernel = model._adjust_kernel(X)
@@ -190,47 +190,47 @@ import pytest
 
 def test_validate_kernel_params():
     """
-    Test the _validate_kernel_params method of EnetConexHull.
+    Test the _validate_kernel_params method of EnetConvexHull.
     """
 
     # Case 1: Valid parameters for 'rbf' kernel
-    model_rbf = EnetConexHull(metric='rbf', kernel_params={'gamma': 0.5})
+    model_rbf = EnetConvexHull(metric='rbf', kernel_params={'gamma': 0.5})
     try:
         model_rbf._validate_kernel_params()
     except ValueError:
         pytest.fail("Validation failed for valid 'rbf' kernel parameters.")
 
     # Case 2: Valid parameters for 'poly' kernel
-    model_poly = EnetConexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': 3, 'coef0': 1.0})
+    model_poly = EnetConvexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': 3, 'coef0': 1.0})
     try:
         model_poly._validate_kernel_params()
     except ValueError:
         pytest.fail("Validation failed for valid 'poly' kernel parameters.")
 
     # Case 3: Valid parameters for 'sigmoid' kernel
-    model_sigmoid = EnetConexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 1.5})
+    model_sigmoid = EnetConvexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 1.5})
     try:
         model_sigmoid._validate_kernel_params()
     except ValueError:
         pytest.fail("Validation failed for valid 'sigmoid' kernel parameters.")
 
     # Case 4: Invalid gamma for 'rbf'
-    model_invalid_gamma = EnetConexHull(metric='rbf', kernel_params={'gamma': 'invalid'})
+    model_invalid_gamma = EnetConvexHull(metric='rbf', kernel_params={'gamma': 'invalid'})
     with pytest.raises(ValueError, match="Invalid gamma value: invalid.*"):
         model_invalid_gamma._validate_kernel_params()
 
     # Case 5: Negative degree for 'poly'
-    model_negative_degree = EnetConexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': -1, 'coef0': 1.0})
+    model_negative_degree = EnetConvexHull(metric='poly', kernel_params={'gamma': 0.3, 'degree': -1, 'coef0': 1.0})
     with pytest.raises(ValueError, match="Invalid degree value: -1.*"):
         model_negative_degree._validate_kernel_params()
 
     # Case 6: Invalid coef0 for 'sigmoid'
-    model_invalid_coef0 = EnetConexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 'invalid'})
+    model_invalid_coef0 = EnetConvexHull(metric='sigmoid', kernel_params={'gamma': 0.2, 'coef0': 'invalid'})
     with pytest.raises(ValueError, match="Invalid coef0 value: invalid.*"):
         model_invalid_coef0._validate_kernel_params()
 
     # Case 7: Missing metric
-    model_no_metric = EnetConexHull(kernel_params={'gamma': 0.3})
+    model_no_metric = EnetConvexHull(kernel_params={'gamma': 0.3})
     with pytest.raises(ValueError, match="The kernel metric must be specified."):
         model_no_metric._validate_kernel_params()
 

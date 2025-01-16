@@ -71,7 +71,7 @@ def ensure_fitted(func):
 
     return wrapper
 
-class EnetConexHull(BaseEstimator, OutlierMixin):
+class EnetConvexHull(BaseEstimator, OutlierMixin):
     """
     One-Class Classifier for Anomaly Detection using Elastic Net and Convex Hull.
 
@@ -516,7 +516,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     
 
 class ThresholdFinder:
-    def __init__(self, model:EnetConexHull, X):
+    def __init__(self, model:EnetConvexHull, X):
         self.model     = model
         self.X         = X
         self.XCopy     = deepcopy(X)
