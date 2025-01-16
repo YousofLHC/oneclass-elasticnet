@@ -187,6 +187,7 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
     def _calculate_P(self, X):
             BTB = self._adjust_kernel(X)
             P   = (self.landa2 * np.identity(X.shape[0])) + BTB
+            return P
     def fit(self, X, y=None):
         """
         Fit the EnetConvexHull model to the given data.
