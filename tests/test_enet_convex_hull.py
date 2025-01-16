@@ -1,7 +1,8 @@
 from models import EnetConexHull
 import pytest
 import numpy as np
-from sklearn.metrics.pairwise import pairwise_kernels
+from sklearn.metrics.pairwise import pairwise_kernels, linear_kernel
+from sklearn.utils.validation import check_random_state
 
 def test_validate_params():
     """
@@ -163,6 +164,26 @@ def test_kernel_params():
 
     assert np.allclose(result, expected_result), "Kernel computation with updated kernel_params is incorrect."
 
+
+def test_adjust_kernel():
+    """
+    Test the `_adjust_kernel` method of  EnetConexHull for correctness.
+    """
+    # Generate mock data
+    rng = check_random_state(42)
+    X   = rng.rand(5, 3) # 5 samples, 3 features
+
+    # Initialize the model
+    model = EnetConexHull(metric='linear', kernel_params={})
+
+    # Compute the adjusted kernel matrix
+    adjusted_kernel = model._adjust_kernel(X)
+
+    assert adjusted_kernel.shape == (5, 5), "Adjusted kernel matrix must be square with shape (n_samples, n_samples)"
+    assert np.allclose(adjusted_kernel.sum(axis=0), adjusted_kernel.sum(axis=1)), (
+        "Adjusted kernel matrix should be symmetric"
+    )
+    assert isinstance(adjusted_kernel, np.ndarray), "Adjusted kernel matrix must be a numpy array."
 
 
 
