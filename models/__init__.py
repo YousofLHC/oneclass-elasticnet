@@ -1,3 +1,3 @@
 from .core import EnetConexHull
-
-__all__ = ["EnetConvexHull"]
+from .core import ThresholdFinder
+__all__ = ["EnetConvexHull", "ThresholdFinder"]
