@@ -183,7 +183,9 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         row_sum = G.sum(axis=1, keepdims=True)
         col_sum = G.sum(axis=0, keepdims=True)
         return G -(row_sum+col_sum)/X.shape[0] + G_sum / (X.shape[0]**2)
-
+    def _calculate_P(self, X):
+            BTB = self._adjust_kernel(X)
+            P   = (self.landa2 * np.identity(X.shape[0])) + BTB
     def fit(self, X, y=None):
         """
         Fit the EnetConvexHull model to the given data.
@@ -219,10 +221,9 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # Compute the kernel matrix
         self.G = pairwise_kernels(self.X_target, metric=self.metric, **self.kernel_params)
         self.n, self.m = self.X_target.shape
-
+    
         # Compute the optimization matrix
-        BTB = self._adjust_kernel(self.X_target)
-        self.P = (self.landa2 * np.identity(self.n)) + BTB
+        self.P = self._calculate_P(self.X_target)
         # Inirialize lower bounds
         self.lb = np.zeros((self.n, 1)) if self.lb is None else self.lb
         # Store additional parameters for later use. # for scikit-learn compatibility
@@ -303,7 +304,29 @@ class EnetConexHull(BaseEstimator, OutlierMixin):
         # Compute the z-value
         z_value = self.landa1*x.sum() + self.landa2*np.linalg.norm(x)
         return z_value
+    def _calculate_q(self, G: np.ndarray, Ky: np.ndarray) -> np.ndarray:
+        """
+        ONLY FOR THRESHOLDFINDER. NEED REFACTOR FOR ENETCONVEXHULL CLASS
+        Calculate vector q for the quadratic problem.
+        it is used for ThresholdFinder
+        Parameters
+        ----------
+        G : ndarray of shape (n_samples, n_samples)
+            Adjusted kernel matrix.
+        Ky : ndarray of shape (n_samples, 1)
+            Kernel similarity vector between X_target and a sample.
 
+        Returns
+        -------
+        q : ndarray of shape (n_samples, 1)
+            Vector q for quadratic programming.
+        """
+        n = G.shape[0]
+        G_sum = G.sum()
+        Ky_sum = Ky.sum()
+        row_sum = G.sum(axis=1, keepdims=True)
+        h = Ky - (Ky_sum + row_sum) / n + G_sum / (n ** 2)
+        return self.landa1 * np.ones((n, 1)) - 2 * h
     @ensure_fitted
     def predict(self, X):
         """
